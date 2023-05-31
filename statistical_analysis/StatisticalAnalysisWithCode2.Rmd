@@ -1,0 +1,918 @@
+---
+title: "statistical analysis"
+author: "Suyeon Ju"
+date: "5/20/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(lubridate)
+library(dplyr)
+library(car)
+library(coin)
+library(clinfun)
+library(PMCMRplus)
+library(data.table)
+```
+
+
+## Data 
+```{r}
+# data
+# raw data
+setwd("/Users/admin/Documents/UCI/Stats 170AB/Project/sentiment_comments")
+uci_raw = fread("uci_sentiment_comments.csv")
+ucm_raw = fread("ucmerced_sentiment_comments.csv")
+ucb_raw = fread("berkeley_sentiment_comments.csv")
+ucla_raw = fread("ucla_sentiment_comments.csv")
+ucr_raw = fread("ucr_sentiment_comments.csv")
+ucsb_raw = fread("ucsantabarbara_sentiment_comments.csv")
+ucsc_raw = fread("ucsc_sentiment_comments.csv")
+ucsd_raw = fread("ucsd_sentiment_comments.csv")
+ucd_raw = fread("ucdavis_sentiment_comments.csv")
+
+
+# monthly data from 2015 to 2022 (8 years)
+year_to_filter <- c(2010, 2011, 2012, 2013, 2014, 2023)
+
+ucsd_raw$date <- as.Date(ucsd_raw$date)
+ucsd_raw$year_month <- floor_date(ucsd_raw$date, 'month')
+ucsd_month <- ucsd_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsc_raw$date <- as.Date(ucsc_raw$date)
+ucsc_raw$year_month <- floor_date(ucsc_raw$date, 'month')
+ucsc_month <- ucsc_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsb_raw$date <- as.Date(ucsb_raw$date)
+ucsb_raw$year_month <- floor_date(ucsb_raw$date, 'month')
+ucsb_month <- ucsb_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucr_raw$date <- as.Date(ucr_raw$date)
+ucr_raw$year_month <- floor_date(ucr_raw$date, 'month')
+ucr_month <- ucr_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucd_raw$date <- as.Date(ucd_raw$date)
+ucd_raw$year_month <- floor_date(ucd_raw$date, 'month')
+ucd_month <- ucd_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucla_raw$date <- as.Date(ucla_raw$date)
+ucla_raw$year_month <- floor_date(ucla_raw$date, 'month')
+ucla_month <- ucla_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucb_raw$date <- as.Date(ucb_raw$date)
+ucb_raw$year_month <- floor_date(ucb_raw$date, 'month')
+ucb_month <- ucb_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+uci_raw$date <- as.Date(uci_raw$date)
+uci_raw$year_month <- floor_date(uci_raw$date, 'month')
+uci_month <- uci_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucm_raw$date <- as.Date(ucm_raw$date)
+ucm_raw$year_month <- floor_date(ucm_raw$date, 'month')
+ucm_month <- ucm_raw %>%
+  group_by(year_month) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+uci_month_truncate <- uci_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucla_month_truncate <- ucla_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucb_month_truncate <- ucb_month%>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucr_month_truncate <- ucr_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucsc_month_truncate <- ucsc_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucsd_month_truncate <- ucsd_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucd_month_truncate <- ucd_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucsb_month_truncate <- ucsb_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+ucm_month_truncate <- ucm_month %>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+
+# daily data
+# uci_raw$year_month_day <- as.Date(uci_raw$date)
+# uci_day <- uci_raw %>%
+#   group_by(year_month_day) %>%
+#   dplyr::summarize(daily_sentiment = mean(sentiment_score)) %>% as.data.frame()
+```
+
+```{r}
+# data exploration
+a1 <- any(uci_month$monthly_sentiment == 0)
+a2 <- any(ucmerced_month$monthly_sentiment == 0)
+a3 <- any(ucb$monthly_sentiment == 0)
+a4 <- any(ucla$monthly_sentiment == 0)
+a5 <- any(ucsb$monthly_sentiment == 0)
+a6 <- any(ucsd$monthly_sentiment == 0)
+a7 <- any(ucd$monthly_sentiment == 0)
+a8 <- any(ucsc$monthly_sentiment == 0)
+a9 <- any(ucr$monthly_sentiment == 0)
+cat(a1, a2, a3, a4, a5, a6, a7, a8, a9)
+
+nrow(ucla_month_truncate)
+nrow(ucm_month_truncate)
+nrow(ucd_month_truncate)
+nrow(uci_month_truncate)
+nrow(ucb_month_truncate)
+nrow(ucsd_month_truncate)
+nrow(ucsb_month_truncate)
+nrow(ucsc_month_truncate)
+nrow(ucr_month_truncate)
+```
+
+
+## Assumption
+```{r}
+## ANOVA Assumptions
+# normality of response
+qqnorm(uci_raw$sentiment_score, col="red")
+qqline(uci_raw$sentiment_score, col = "steelblue", lwd = 2)
+
+# constant-variance 
+varCheck = var.test(ucifiltered$sentiment_score, ucla$monthly_sentiment)
+print(varCheck)
+```
+
+
+## I. General Setting
+## Kruskal-Wallis Test
+$$H_0: \mu_{uci} = \mu_{ucla} = \: \: ... \: \:  = \mu_{ucm} \: \: vs. \: H_A: \mu_{uci} \neq \mu_{ucla} \neq \: \: ... \: \: \neq \mu_{ucm}$$
+$$\alpha = 0.05$$
+```{r}
+# conduct the kruskal-wallis test
+# l = list(ucb$monthly_sentiment, ucla$monthly_sentiment, ucr$monthly_sentiment, ucsc$monthly_sentiment, ucsd$monthly_sentiment, uci_month$monthly_sentiment, ucm_month$monthly_sentiment)
+# result <- kruskal.test(l)
+# 
+# print(result)
+
+
+l = list(ucb_month_truncate$monthly_sentiment, ucla_month_truncate$monthly_sentiment, ucr_month_truncate$monthly_sentiment, ucsc_month_truncate$monthly_sentiment, ucsd_month_truncate$monthly_sentiment, uci_month_truncate$monthly_sentiment, ucm_month_truncate$monthly_sentiment, ucd_month_truncate$monthly_sentiment, ucsb_month_truncate$monthly_sentiment)
+result <- kruskal.test(l)
+
+print(result)
+```
+**Conclusion:** 
+(2010-2023)
+Since the p-value (6.483e-16) is smaller than the significance level (0.05), we reject the null hypothesis, and there is a convincing evidence that there is a significant difference in the means of the monthly sentiment scores across 9 UC schools.
+
+(2015-2022)
+Since the p-value (2.2e-16) is smaller than the significance level (0.05), we reject the null hypothesis, and there is a convincing evidence that there is a significant difference in the means of the monthly sentiment scores across 9 UC schools.
+
+
+
+## Welch's T-Test
+$$1.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucla} \: vs. \: H_A: \mu_{uci} > \mu_{ucla}$$
+$$2.  \: \: \: H_0:\mu_{uci} \leq \mu_{ucb} \: vs. \: H_A: \mu_{uci} > \mu_{ucb}$$
+$$3.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucsd} \: vs. \: H_A: \mu_{uci} > \mu_{ucsd}$$
+$$4.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucsb} \: vs. \: H_A: \mu_{uci} > \mu_{ucsb}$$
+$$5.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucsc} \: vs. \: H_A: \mu_{uci} > \mu_{ucsc}$$
+$$6.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucr} \: vs. \: H_A: \mu_{uci} > \mu_{ucr}$$
+$$7.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucd} \: vs. \: H_A: \mu_{uci} > \mu_{ucd}$$
+$$8.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucm} \: vs. \: H_A: \mu_{uci} > \mu_{ucm}$$
+$$\alpha_{new} = \frac{0.05}{8}=0.00625$$
+```{r}
+# KEEP IN MIND: Because of the bonferonni correction, alpha value should be 0.05/8=0.00625
+```
+
+```{r}
+# conduct the welch's t-test for 8 times
+# UCI_UCLA = t.test(uci_month$monthly_sentiment, ucla$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCI_UCB = t.test(uci_month$monthly_sentiment, ucb$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCI_UCSD = t.test(uci_month$monthly_sentiment, ucsd$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCI_UCSB = t.test(uci_month$monthly_sentiment, ucsb$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCI_UCSC = t.test(uci_month$monthly_sentiment, ucsc$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCI_UCR = t.test(uci_month$monthly_sentiment, ucr$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCI_UCD = t.test(uci_month$monthly_sentiment, ucd$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCI_UCM = t.test(uci_month$monthly_sentiment, ucm_month$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# 
+# cat('\nUCI_UCLA:', UCI_UCLA$p.value, '\n')
+# cat('UCI_UCB:', UCI_UCB$p.value, '\n')
+# cat('UCI_UCSD:', UCI_UCSD$p.value, '\n')
+# cat('UCI_UCSB:', UCI_UCSB$p.value, '\n')
+# cat('UCI_UCSC:', UCI_UCSC$p.value, '\n')
+# cat('UCI_UCR:', UCI_UCR$p.value, '\n')
+# cat('UCI_UCD:', UCI_UCD$p.value, '\n')
+# cat('UCI_UCM:', UCI_UCM$p.value, '\n')
+
+# FOR FUN
+# UCB_UCLA = t.test(ucb$monthly_sentiment, ucla$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# UCLA_UCM = t.test(ucla$monthly_sentiment, ucmerced_month$monthly_sentiment, alternative='greater', var.equal = FALSE)
+# print(UCLA_UCM)
+UCI_UCLA = t.test(uci_month_truncate$monthly_sentiment, ucla_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCB = t.test(uci_month_truncate$monthly_sentiment, ucb_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCSD = t.test(uci_month_truncate$monthly_sentiment, ucsd_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCSB = t.test(uci_month_truncate$monthly_sentiment, ucsb_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCSC = t.test(uci_month_truncate$monthly_sentiment, ucsc_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCR = t.test(uci_month_truncate$monthly_sentiment, ucr_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCD = t.test(uci_month_truncate$monthly_sentiment, ucd_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCM = t.test(uci_month_truncate$monthly_sentiment, ucm_month_truncate$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+
+cat('\nUCI_UCLA equal:', UCI_UCLA$p.value, '\n')
+cat('UCI_UCB equal:', UCI_UCB$p.value, '\n')
+cat('UCI_UCSD equal:', UCI_UCSD$p.value, '\n')
+cat('UCI_UCSB equal:', UCI_UCSB$p.value, '\n')
+cat('UCI_UCSC equal:', UCI_UCSC$p.value, '\n')
+cat('UCI_UCR equal:', UCI_UCR$p.value, '\n')
+cat('UCI_UCD equal:', UCI_UCD$p.value, '\n')
+cat('UCI_UCM equal:', UCI_UCM$p.value, '\n')
+
+
+UCI_UCB = t.test(uci_month_truncate$monthly_sentiment, ucb_month_truncate$monthly_sentiment, alternative='greater', var.equal = FALSE)
+UCI_UCM = t.test(uci_month_truncate$monthly_sentiment, ucm_month_truncate$monthly_sentiment, alternative='greater', var.equal = FALSE)
+
+
+cat('UCI_UCB Greater:', UCI_UCB$p.value, '\n')
+cat('UCI_UCM Greater:', UCI_UCM$p.value, '\n')
+
+UCI_UCB = t.test(uci_month_truncate$monthly_sentiment, ucb_month_truncate$monthly_sentiment, alternative='less', var.equal = FALSE)
+UCI_UCM = t.test(uci_month_truncate$monthly_sentiment, ucm_month_truncate$monthly_sentiment, alternative='less', var.equal = FALSE)
+
+
+cat('UCI_UCB less:', UCI_UCB$p.value, '\n')
+cat('UCI_UCM less:', UCI_UCM$p.value, '\n')
+
+
+```
+**Conclusion:**
+$\alpha = 0.00625$
+(2010-2023)
+UCI is more positive than the following UC School: UCB.
+UCI is more negative than the following UC Schools: UCLA, UCSD, UCSC, UCR, UCD, UCM, UCSD.
+
+(2015-2022)
+UCI is more positive than the following UC Schools: UCB
+We don't have evidence that UCI is different than the following UC Schools:  UCLA, UCSD, UCSC, UCR, UCD
+UCI is more negative than the following UC Schools: UCM
+
+
+## Jonckheere-Terpstra Trend Test
+```{r}
+# Cochran-Armitage Trend Test Limitation: The response is binary (binomial distribution).
+```
+
+```{r}
+# 2010-2022: 12 months
+# 2023: 4 months
+# Total Number of Months: (12 * 13) + 4 = 160
+```
+
+$$1.(UCI) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$2.(UCM) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$3.(UCB) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$4.(UCLA) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$5.(UCSD) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$6.(UCSC) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$7.(UCSB) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$8.(UCR) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$9.(UCD) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+
+$$\alpha = 0.05$$
+```{r}
+# [QUESTION] Do we need the bonferonni correction: alpha = 0.05/9? NO
+```
+
+```{r}
+# conduct the jonckheere-terpstra trend test for 9 times
+# UCI_jonckheere <- jonckheereTest(uci_month$monthly_sentiment, uci_month$year_month)
+# UCM_jonckheere <- jonckheereTest(ucm_month$monthly_sentiment, ucm_month$year_month)
+# UCLA_jonckheere <- jonckheereTest(ucla$monthly_sentiment, ucla$year_month)
+# UCB_jonckheere <- jonckheereTest(ucb$monthly_sentiment, ucb$year_month)
+# UCR_jonckheere <- jonckheereTest(ucr$monthly_sentiment, ucr$year_month)
+# UCSC_jonckheere <- jonckheereTest(ucsc$monthly_sentiment, ucsc$year_month)
+# UCSD_jonckheere <- jonckheereTest(ucsd$monthly_sentiment, ucsd$year_month)
+# UCD_jonckheere <- jonckheereTest(ucd$monthly_sentiment, ucd$year_month)
+# UCSB_jonckheere <- jonckheereTest(ucsb$monthly_sentiment, ucsb$year_month)
+# 
+# cat('\nUCI:', UCI_jonckheere$p.value, '\n')
+# cat('UCM:', UCM_jonckheere$p.value, '\n')
+# cat('UCLA:', UCLA_jonckheere$p.value, '\n')
+# cat('UCB:', UCB_jonckheere$p.value, '\n')
+# cat('UCR:', UCR_jonckheere$p.value, '\n')
+# cat('UCSC:', UCSC_jonckheere$p.value, '\n')
+# cat('UCSD:', UCSD_jonckheere$p.value, '\n')
+# cat('UCD:', UCD_jonckheere$p.value, '\n')
+# cat('UCSB:', UCSB_jonckheere$p.value, '\n')
+
+UCI_jonckheere <- jonckheereTest(uci_month_truncate$monthly_sentiment, uci_month_truncate$year_month)
+UCM_jonckheere <- jonckheereTest(ucm_month_truncate$monthly_sentiment, ucm_month_truncate$year_month)
+UCLA_jonckheere <- jonckheereTest(ucla_month_truncate$monthly_sentiment, ucla_month_truncate$year_month)
+UCB_jonckheere <- jonckheereTest(ucb_month_truncate$monthly_sentiment, ucb_month_truncate$year_month)
+UCR_jonckheere <- jonckheereTest(ucr_month_truncate$monthly_sentiment, ucr_month_truncate$year_month)
+UCSC_jonckheere <- jonckheereTest(ucsc_month_truncate$monthly_sentiment, ucsc_month_truncate$year_month)
+UCSD_jonckheere <- jonckheereTest(ucsd_month_truncate$monthly_sentiment, ucsd_month_truncate$year_month)
+UCD_jonckheere <- jonckheereTest(ucd_month_truncate$monthly_sentiment, ucd_month_truncate$year_month)
+UCSB_jonckheere <- jonckheereTest(ucsb_month_truncate$monthly_sentiment, ucsb_month_truncate$year_month)
+
+cat('\nUCI:', UCI_jonckheere$p.value, '\n')
+cat('UCM:', UCM_jonckheere$p.value, '\n')
+cat('UCLA:', UCLA_jonckheere$p.value, '\n')
+cat('UCB:', UCB_jonckheere$p.value, '\n')
+cat('UCR:', UCR_jonckheere$p.value, '\n')
+cat('UCSC:', UCSC_jonckheere$p.value, '\n')
+cat('UCSD:', UCSD_jonckheere$p.value, '\n')
+cat('UCD:', UCD_jonckheere$p.value, '\n')
+cat('UCSB:', UCSB_jonckheere$p.value, '\n')
+```
+**Conclusion:**
+(2010-2023) Flat Trend: UCI, UCM, UCD
+
+(2015-2022) Flat Trend: UCI, UCB
+
+
+## Extended Jonckheere-Terpstra Trend Test
+$$1.(UCLA) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$2.(UCM) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$3.(UCD) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$4.(UCSC) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$5.(UCSB) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$6.(UCR) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$\alpha = 0.05$$
+```{r}
+# [QUESTION] Do we need the bonferonni correction: alpha = 0.05/6? NO
+```
+
+```{r}
+# conduct the jonckheere-terpstra trend test for 6 times
+# UCLA_jonckheere <- jonckheereTest(ucla$monthly_sentiment, ucla$year_month, alternative='less')
+# 
+# UCB_jonckheere <- jonckheereTest(ucb$monthly_sentiment, ucb$year_month, alternative='less')
+# 
+# UCR_jonckheere <- jonckheereTest(ucr$monthly_sentiment, ucr$year_month, alternative='less')
+# 
+# UCSC_jonckheere <- jonckheereTest(ucsc$monthly_sentiment, ucsc$year_month, alternative='less')
+# 
+# UCSD_jonckheere <- jonckheereTest(ucsd$monthly_sentiment, ucsd$year_month, alternative='less')
+# 
+# UCSB_jonckheere <- jonckheereTest(ucsb$monthly_sentiment, ucsb$year_month, alternative='less')
+# 
+# cat('\:UCLA decreasing trend:', UCLA_jonckheere$p.value, '\n')
+# cat('UCB decreasing trend:', UCB_jonckheere$p.value, '\n')
+# cat('UCR decreasing trend:', UCR_jonckheere$p.value, '\n')
+# cat('UCSC decreasing trend:', UCSC_jonckheere$p.value, '\n')
+# cat('UCSD decreasing trend:', UCSD_jonckheere$p.value, '\n')
+# cat('UCSB decreasing trend:', UCSB_jonckheere$p.value, '\n')
+
+
+UCLA_jonckheere <- jonckheereTest(ucla_month_truncate$monthly_sentiment, ucla_month_truncate$year_month, alternative='less')
+UCSD_jonckheere <- jonckheereTest(ucsd_month_truncate$monthly_sentiment, ucsd_month_truncate$year_month, alternative='less')
+UCM_jonckheere <- jonckheereTest(ucm_month_truncate$monthly_sentiment, ucm_month_truncate$year_month, alternative='less')
+UCR_jonckheere <- jonckheereTest(ucr_month_truncate$monthly_sentiment, ucr_month_truncate$year_month, alternative='less')
+UCSC_jonckheere <- jonckheereTest(ucsc_month_truncate$monthly_sentiment, ucsc_month_truncate$year_month, alternative='less')
+UCD_jonckheere <- jonckheereTest(ucd_month_truncate$monthly_sentiment, ucd_month_truncate$year_month, alternative='less')
+UCSB_jonckheere <- jonckheereTest(ucsb_month_truncate$monthly_sentiment, ucsb_month_truncate$year_month, alternative='less')
+
+cat('\nUCLA decreasing trend:', UCLA_jonckheere$p.value, '\n')
+cat('UCSD decreasing trend:', UCSD_jonckheere$p.value, '\n')
+cat('UCM decreasing trend:', UCB_jonckheere$p.value, '\n')
+cat('UCR decreasing trend:', UCR_jonckheere$p.value, '\n')
+cat('UCSC decreasing trend:', UCSC_jonckheere$p.value, '\n')
+cat('UCD decreasing trend:', UCD_jonckheere$p.value, '\n')
+cat('UCSB decreasing trend:', UCSB_jonckheere$p.value, '\n')
+```
+**Conclusion:**
+(2010-2023) There is a convincing evidence that the following UC Schools have decreasing trends: UCLA, UCB, UCR, UCSC, UCSD, UCSB.
+
+(2015-2022) There is a convincing evidence that the following UC Schools have decreasing trends: UCLA, UCR, UCSC, UCSB, UCSD, UCD. It implies that UCM have increasing trends.
+
+
+
+## II. Academic Setting
+## Kruskal-Wallis Test
+
+$$H_0: \mu_{uci} = \mu_{ucla} = \: \: ... \: \:  = \mu_{ucm} \: \: vs. \: H_A: \mu_{uci} \neq \mu_{ucla} \neq \: \: ... \: \: \neq \mu_{ucm}$$
+$$\alpha = 0.05$$
+
+```{r}
+# data
+setwd("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments")
+uci_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCIAcademicComments.csv")
+ucla_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCLAAcademicComments.csv")
+ucr_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCRAcademicComments.csv")
+ucsb_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCSBAcademicComments.csv")
+ucsc_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCSCAcademicComments.csv")
+ucsd_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCSDAcademicComments.csv")
+ucd_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCDAcademicComments.csv", head = TRUE, sep = ',')
+ucb_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCBAcademicComments.csv")
+ucm_a = fread("/Users/admin/Documents/UCI/Stats 170AB/Project/AcademicComments/UCMAcademicComments.csv")
+
+# monthly data
+aggregate_month_data <- function(academic_data) {
+  year_to_filter <- c(2010, 2011, 2012, 2013, 2014, 2023)
+  academic_data$date <- as.Date(academic_data$date, format="%Y-%m-%d %H:%M:%OS")
+  academic_data$date <- floor_date(academic_data$date, 'month')
+  academic_data_r <- academic_data %>%
+    group_by(date) %>%
+    dplyr::summarize(monthly_sentiment = mean(as.double(sentiment_score))) %>% as.data.frame()
+  result <- academic_data_r %>%
+  filter(!year(ymd((date))) %in% year_to_filter)
+  return(result)
+}
+uci_month_a <- aggregate_month_data(uci_a)
+ucla_month_a <- aggregate_month_data(ucla_a)
+ucr_month_a <- aggregate_month_data(ucr_a)
+ucsb_month_a <- aggregate_month_data(ucsb_a)
+ucsc_month_a <- aggregate_month_data(ucsc_a)
+ucsd_month_a <- aggregate_month_data(ucsd_a)
+ucd_month_a <- aggregate_month_data(ucd_a)
+ucb_month_a <- aggregate_month_data(ucb_a)
+ucm_month_a <- aggregate_month_data(ucm_a)
+uci_a$date <- as.Date(uci_a$date, format="%Y-%m-%d")
+uci_a$Date <- floor_date(uci_a$Date, 'month')
+uci_news_month <- uci_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucla_news$Date <- as.Date(ucla_news$Date, format = "%B %d, %Y")
+ucla_news$Date <- floor_date(ucla_news$Date, 'month')
+ucla_news_month <- ucla_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsd_news$Date <- as.Date(ucsd_news$Date, format = "%B %d, %Y")
+ucsd_news$Date <- floor_date(ucsd_news$Date, 'month')
+ucsd_news_month <- ucsd_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsc_news$Date <- as.Date(ucsc_news$Date, format = "%B %d, %Y")
+ucsc_news$Date <- floor_date(ucsc_news$Date, 'month')
+ucsc_news_month <- ucsc_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsb_news$Date <- as.Date(ucsb_news$Date, format = "%B %d, %Y")
+ucsb_news$Date <- floor_date(ucsb_news$Date, 'month')
+ucsb_news_month <- ucsb_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucr_news$Date <- as.Date(ucr_news$Date, format = "%B %d, %Y")
+ucr_news$Date <- floor_date(ucr_news$Date, 'month')
+ucr_news_month <- ucr_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucd_news$Date <- as.Date(ucd_news$Date, format = "%B %d, %Y")
+ucd_news$Date <- floor_date(ucd_news$Date, 'month')
+ucd_news_month <- ucd_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+setwd("/Users/suyeonju101/Desktop/CapstoneProject/NewsData/sentimentMonthly")
+fwrite(uci_news_month, file='UCI New Monthly Sentiment.csv')
+fwrite(ucla_news_month, file='UCLA New Monthly Sentiment.csv')
+fwrite(ucsd_news_month, file='UCSD New Monthly Sentiment.csv')
+fwrite(ucsb_news_month, file='UCSB New Monthly Sentiment.csv')
+fwrite(ucsc_news_month, file='UCSC New Monthly Sentiment.csv')
+fwrite(ucr_news_month, file='UCR New Monthly Sentiment.csv')
+fwrite(ucd_news_month, file='UCD New Monthly Sentiment.csv')
+```
+
+
+```{r}
+# conduct the kruskal-wallis test
+l = list(ucb_month_a$monthly_sentiment, ucla_month_a$monthly_sentiment, ucr_month_a$monthly_sentiment, ucsc_month_a$monthly_sentiment, ucsd_month_a$monthly_sentiment, uci_month_a$monthly_sentiment, ucm_month_a$monthly_sentiment, ucd_month_a$monthly_sentiment, ucsb_month_a$monthly_sentiment)
+result <- kruskal.test(l)
+
+print(result)
+```
+Since the p-value (6.034e-07) is smaller than the significance level (0.05), we reject the null hypothesis, and there is a convincing evidence that there is a significant difference in the means of the monthly academic sentiment scores across 9 UC schools.
+
+## Welch's T-Test
+$$1.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucla} \: vs. \: H_A: \mu_{uci} > \mu_{ucla}$$
+$$2.  \: \: \: H_0:\mu_{uci} \leq \mu_{ucb} \: vs. \: H_A: \mu_{uci} > \mu_{ucb}$$
+$$3.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucsd} \: vs. \: H_A: \mu_{uci} > \mu_{ucsd}$$
+$$4.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucsb} \: vs. \: H_A: \mu_{uci} > \mu_{ucsb}$$
+$$5.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucsc} \: vs. \: H_A: \mu_{uci} > \mu_{ucsc}$$
+$$6.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucr} \: vs. \: H_A: \mu_{uci} > \mu_{ucr}$$
+$$7.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucd} \: vs. \: H_A: \mu_{uci} > \mu_{ucd}$$
+$$8.  \: \: \: H_0: \mu_{uci} \leq \mu_{ucm} \: vs. \: H_A: \mu_{uci} > \mu_{ucm}$$
+$$\alpha_{new} = \frac{0.05}{8}=0.00625$$
+```{r}
+# KEEP IN MIND: Because of the bonferonni correction, alpha value should be 0.05/8=0.00625
+```
+
+```{r}
+# conduct the welch's t-test for 8 times
+UCI_UCLA = t.test(uci_month_a$monthly_sentiment, ucla_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCB = t.test(uci_month_a$monthly_sentiment, ucb_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCSD = t.test(uci_month_a$monthly_sentiment, ucsd_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCSB = t.test(uci_month_a$monthly_sentiment, ucsb_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCSC = t.test(uci_month_a$monthly_sentiment, ucsc_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCR = t.test(uci_month_a$monthly_sentiment, ucr_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCD = t.test(uci_month_a$monthly_sentiment, ucd_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCI_UCM = t.test(uci_month_a$monthly_sentiment, ucm_month_a$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+
+cat('\nUCI_UCLA: Equal', UCI_UCLA$p.value, '\n')
+cat('UCI_UCB: Equal', UCI_UCB$p.value, '\n')
+cat('UCI_UCSD: Equal', UCI_UCSD$p.value, '\n')
+cat('UCI_UCSB: Equal', UCI_UCSB$p.value, '\n')
+cat('UCI_UCSC: Equal', UCI_UCSC$p.value, '\n')
+cat('UCI_UCR Equal:', UCI_UCR$p.value, '\n')
+cat('UCI_UCD Equal:', UCI_UCD$p.value, '\n')
+cat('UCI_UCM Equal:', UCI_UCM$p.value, '\n')
+
+UCI_UCD = t.test(uci_month_a$monthly_sentiment, ucd_month_a$monthly_sentiment, alternative='greater', var.equal = FALSE)
+UCI_UCM = t.test(uci_month_a$monthly_sentiment, ucm_month_a$monthly_sentiment, alternative='greater', var.equal = FALSE)
+
+cat('UCI_UCD Greater:', UCI_UCD$p.value, '\n')
+cat('UCI_UCM Greater:', UCI_UCM$p.value, '\n')
+
+UCI_UCD = t.test(uci_month_a$monthly_sentiment, ucd_month_a$monthly_sentiment, alternative='less', var.equal = FALSE)
+UCI_UCM = t.test(uci_month_a$monthly_sentiment, ucm_month_a$monthly_sentiment, alternative='less', var.equal = FALSE)
+
+cat('UCI_UCD less:', UCI_UCD$p.value, '\n')
+cat('UCI_UCM less:', UCI_UCM$p.value, '\n')
+```
+UCI academics is more positive than the following UC Schools: 
+We don't have evidence that UCI academics is different than the following UC Schools:  UCLA, UCSD, UCSC, UCR, UCB, UCSB
+UCI academics is more negative than the following UC Schools: UCM, UCD
+
+
+## Jonckheere-Terpstra Trend Test
+```{r}
+# Cochran-Armitage Trend Test Limitation: The response is binary (binomial distribution).
+```
+
+```{r}
+# 2010-2022: 12 months
+# 2023: 4 months
+# Total Number of Months: (12 * 13) + 4 = 160
+```
+
+$H_0:UCI \: sentiment \: does \: not \: significantly\: change \: over \: time \: in \:academics.$
+$H_A:UCI \: sentiment \: significantly\: changes \: over \: time \: in \:academics.$
+
+$$1.(UCI) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$2.(UCM) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$3.(UCB) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$4.(UCLA) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$5.(UCSD) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$6.(UCSC) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$7.(UCSB) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$8.(UCR) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+$$9.(UCD) \: \: \: H_0: \pi_{1} = \pi_{2}= \:\:\:...\:\:\: = \pi_{160} \: \: vs. \: \: H_A: \pi_{1} \neq \pi_{2} \neq \:\:\:...\:\:\: \neq \pi_{160} $$
+
+$$\alpha = 0.05$$
+```{r}
+# conduct the jonckheere-terpstra trend test for 9 times
+UCI_jonckheere <- jonckheereTest(uci_month_a$monthly_sentiment, uci_month_a$date)
+UCM_jonckheere <- jonckheereTest(ucm_month_a$monthly_sentiment, ucm_month_a$date)
+UCLA_jonckheere <- jonckheereTest(ucla_month_a$monthly_sentiment, ucla_month_a$date)
+UCB_jonckheere <- jonckheereTest(ucb_month_a$monthly_sentiment, ucb_month_a$date)
+UCR_jonckheere <- jonckheereTest(ucr_month_a$monthly_sentiment, ucr_month_a$date)
+UCSC_jonckheere <- jonckheereTest(ucsc_month_a$monthly_sentiment, ucsc_month_a$date)
+UCSD_jonckheere <- jonckheereTest(ucsd_month_a$monthly_sentiment, ucsd_month_a$date)
+UCD_jonckheere <- jonckheereTest(ucd_month_a$monthly_sentiment, ucd_month_a$date)
+UCSB_jonckheere <- jonckheereTest(ucsb_month_a$monthly_sentiment, ucsb_month_a$date)
+
+cat('\nUCI:', UCI_jonckheere$p.value, '\n')
+cat('UCM:', UCM_jonckheere$p.value, '\n')
+cat('UCLA:', UCLA_jonckheere$p.value, '\n')
+cat('UCB:', UCB_jonckheere$p.value, '\n')
+cat('UCR:', UCR_jonckheere$p.value, '\n')
+cat('UCSC:', UCSC_jonckheere$p.value, '\n')
+cat('UCSD:', UCSD_jonckheere$p.value, '\n')
+cat('UCD:', UCD_jonckheere$p.value, '\n')
+cat('UCSB:', UCSB_jonckheere$p.value, '\n')
+```
+No evidence for trend in Academics: UCI, UCM
+Evidence for trend in Academics: UCLA, UCB, UCR, UCSC, UCSD, UCD, UCSB
+## Extended Jonckheere-Terpstra Trend Test
+$$1.(UCLA) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$2.(UCM) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$3.(UCD) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$4.(UCSC) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$5.(UCSB) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+$$6.(UCR) \: \: \: H_0: \pi_{1} \leq \pi_{2} \leq \:\:\:...\:\:\: \leq \pi_{160} \: \: vs. \: \: H_A: \pi_{1} > \pi_{2} > \:\:\:...\:\:\: > \pi_{160} $$
+
+$$\alpha = 0.05$$
+```{r}
+# conduct the jonckheere-terpstra trend test for 6 times
+UCLA_jonckheere <- jonckheereTest(ucla_month_a$monthly_sentiment, ucla_month_a$date, alternative='less')
+UCB_jonckheere <- jonckheereTest(ucb_month_a$monthly_sentiment, ucb_month_a$date, alternative='less')
+UCR_jonckheere <- jonckheereTest(ucr_month_a$monthly_sentiment, ucr_month_a$date, alternative='less')
+UCSC_jonckheere <- jonckheereTest(ucsc_month_a$monthly_sentiment, ucsc_month_a$date, alternative='less')
+UCD_jonckheere <- jonckheereTest(ucd_month_a$monthly_sentiment, ucd_month_a$date, alternative='less')
+UCSB_jonckheere <- jonckheereTest(ucsb_month_a$monthly_sentiment, ucsb_month_a$date, alternative='less')
+
+cat('\nUCLA decreasing trend:', UCLA_jonckheere$p.value, '\n')
+cat('UCB decreasing trend:', UCB_jonckheere$p.value, '\n')
+cat('UCR decreasing trend:', UCR_jonckheere$p.value, '\n')
+cat('UCSC decreasing trend:', UCSC_jonckheere$p.value, '\n')
+cat('UCD decreasing trend:', UCSD_jonckheere$p.value, '\n')
+cat('UCSB decreasing trend:', UCSB_jonckheere$p.value, '\n')
+```
+Decreasing trend: UCLA, UCB, UCR, UCSC, UCD, UCSB
+
+
+## III. Academic Setting with News Data
+```{r}
+# KEEP IN MIND (LIMITATION): ONLY 7 UC SCHOOLS
+```
+
+```{r}
+# 2019 feb - 2020 feb
+# 2020 march
+# 2020 april - 2021 april
+# news data
+# raw data
+make_event_datasets <- function(academic_month_data) {
+  year = c(2015, 2016, 2017, 2018, 2022, 2021)
+  year2019 <- academic_month_data %>% filter(year(ymd((date))) == 2019)
+  year2020 <- academic_month_data %>% filter(year(ymd((date))) == 2020 & !month(ymd((date))) == 2)
+  return(list(year2019, year2020))
+}
+uci_event_dataset <- make_event_datasets(uci_month_a)
+uci_academic_2019 <- uci_event_dataset[[1]]
+uci_academic_2020 <- uci_event_dataset[[2]]
+
+ucb_event_dataset <- make_event_datasets(ucb_month_a)
+ucb_academic_2019 <- ucb_event_dataset[[1]]
+ucb_academic_2020 <- ucb_event_dataset[[2]]
+
+uc_event_dataset <- make_event_datasets(ucla_month_a)
+ucla_academic_2019 <- uc_event_dataset[[1]]
+ucla_academic_2020 <- uc_event_dataset[[2]]
+
+uc_event_dataset <- make_event_datasets(ucr_month_a)
+ucr_academic_2019 <- uc_event_dataset[[1]]
+ucr_academic_2020 <- uc_event_dataset[[2]]
+
+uc_event_dataset <- make_event_datasets(ucsc_month_a)
+ucsc_academic_2019 <- uc_event_dataset[[1]]
+ucsc_academic_2020 <- uc_event_dataset[[2]]
+
+uc_event_dataset <- make_event_datasets(ucsd_month_a)
+ucsd_academic_2019 <- uc_event_dataset[[1]]
+ucsd_academic_2020 <- uc_event_dataset[[2]]
+
+uc_event_dataset <- make_event_datasets(ucd_month_a)
+ucd_academic_2019 <- uc_event_dataset[[1]]
+ucd_academic_2020 <- uc_event_dataset[[2]]
+
+uc_event_dataset <- make_event_datasets(ucsb_month_a)
+ucsb_academic_2019 <- uc_event_dataset[[1]]
+ucsb_academic_2020 <- uc_event_dataset[[2]]
+
+uc_event_dataset <- make_event_datasets(ucm_month_a)
+ucm_academic_2019 <- uc_event_dataset[[1]]
+ucm_academic_2020 <- uc_event_dataset[[2]]
+
+setwd("/Users/admin/Documents/UCI/Stats 170AB/Project/sentiment_news")
+uci_news = fread("UCI_News_With_Sentiment.csv")
+ucla_news = fread("UCLA_News_With_Sentiment.csv")
+ucr_news = fread("UCR_News_With_Sentiment.csv")
+ucsb_news = fread("UCSB_News_With_Sentiment.csv")
+ucsc_news = fread("UCSC_News_With_Sentiment.csv")
+ucsd_news = fread("UCSD_News_With_Sentiment.csv")
+ucd_news = fread("UCD_News_With_Sentiment.csv")
+
+# monthly data
+uci_news$Date <- as.Date(uci_news$Date, format = "%B %d, %Y")
+uci_news$Date <- floor_date(uci_news$Date, 'month')
+uci_news_month <- uci_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucla_news$Date <- as.Date(ucla_news$Date, format = "%B %d, %Y")
+ucla_news$Date <- floor_date(ucla_news$Date, 'month')
+ucla_news_month <- ucla_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsd_news$Date <- as.Date(ucsd_news$Date, format = "%B %d, %Y")
+ucsd_news$Date <- floor_date(ucsd_news$Date, 'month')
+ucsd_news_month <- ucsd_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsc_news$Date <- as.Date(ucsc_news$Date, format = "%B %d, %Y")
+ucsc_news$Date <- floor_date(ucsc_news$Date, 'month')
+ucsc_news_month <- ucsc_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucsb_news$Date <- as.Date(ucsb_news$Date, format = "%B %d, %Y")
+ucsb_news$Date <- floor_date(ucsb_news$Date, 'month')
+ucsb_news_month <- ucsb_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucr_news$Date <- as.Date(ucr_news$Date, format = "%B %d, %Y")
+ucr_news$Date <- floor_date(ucr_news$Date, 'month')
+ucr_news_month <- ucr_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+ucd_news$Date <- as.Date(ucd_news$Date, format = "%B %d, %Y")
+ucd_news$Date <- floor_date(ucd_news$Date, 'month')
+ucd_news_month <- ucd_news %>%
+  group_by(Date) %>%
+  dplyr::summarize(monthly_sentiment = mean(sentiment_score)) %>% as.data.frame()
+
+setwd("/Users/suyeonju101/Desktop/CapstoneProject/NewsData/sentimentMonthly")
+fwrite(uci_news_month, file='UCI New Monthly Sentiment.csv')
+fwrite(ucla_news_month, file='UCLA New Monthly Sentiment.csv')
+fwrite(ucsd_news_month, file='UCSD New Monthly Sentiment.csv')
+fwrite(ucsb_news_month, file='UCSB New Monthly Sentiment.csv')
+fwrite(ucsc_news_month, file='UCSC New Monthly Sentiment.csv')
+fwrite(ucr_news_month, file='UCR New Monthly Sentiment.csv')
+fwrite(ucd_news_month, file='UCD New Monthly Sentiment.csv')
+
+# data from 2015-2022
+year_to_filter <- c(2010, 2011, 2012, 2013, 2014, 2023)
+uci_news_month_truncate <- uci_news_month %>%
+  filter(!year(ymd((Date))) %in% year_to_filter)
+
+ucla_news_month_truncate <- ucla_news_month %>%
+  filter(!year(ymd((Date))) %in% year_to_filter)
+
+ucr_news_month_truncate <- ucr_news_month %>%
+  filter(!year(ymd((Date))) %in% year_to_filter)
+
+ucsc_news_month_truncate <- ucsc_news_month %>%
+  filter(!year(ymd((Date))) %in% year_to_filter)
+
+ucsd_news_month_truncate <- ucsd_news_month %>%
+  filter(!year(ymd((Date))) %in% year_to_filter)
+
+ucd_news_month_truncate <- ucd_news_month %>%
+  filter(!year(ymd((Date))) %in% year_to_filter)
+
+ucsb_news_month_truncate <- ucsb_news_month %>%
+  filter(!year(ymd((Date))) %in% year_to_filter)
+```
+
+```{r}
+# KEEP IN MIND: UCLA news data stops at 2019.
+year_to_filter <- c(2016, 2017, 2018)
+ucla_month_truncate_1 <- ucla_month_truncate%>%
+  filter(!year(ymd((year_month))) %in% year_to_filter)
+```
+
+
+```{r}
+uci_news_month_truncate <- uci_news_month_truncate %>% rename('year_month' = 'Date') %>% rename('monthly_sentiment_news' = 'monthly_sentiment')
+uci_month_truncate_news <- merge(x=uci_month_truncate, y=uci_news_month_truncate, by='year_month')
+
+ucla_news_month_truncate <- ucla_news_month_truncate %>% rename('year_month' = 'Date') %>% rename('monthly_sentiment_news' = 'monthly_sentiment')
+ucla_month_truncate_news <- merge(x=ucla_month_truncate_1, y=ucla_news_month_truncate, by='year_month')
+
+ucsd_news_month_truncate <- ucsd_news_month_truncate %>% rename('year_month' = 'Date') %>% rename('monthly_sentiment_news' = 'monthly_sentiment')
+ucsd_month_truncate_news <- merge(x=ucsd_month_truncate, y=ucsd_news_month_truncate, by='year_month')
+  
+ucsc_news_month_truncate <- ucsc_news_month_truncate %>% rename('year_month' = 'Date') %>% rename('monthly_sentiment_news' = 'monthly_sentiment')
+ucsc_month_truncate_news <- merge(x=ucsc_month_truncate, y=ucsc_news_month_truncate, by='year_month')
+
+ucr_news_month_truncate <- ucr_news_month_truncate %>% rename('year_month' = 'Date') %>% rename('monthly_sentiment_news' = 'monthly_sentiment')
+ucr_month_truncate_news <- merge(x=ucr_month_truncate, y=ucr_news_month_truncate, by='year_month')
+
+ucd_news_month_truncate <- ucd_news_month_truncate %>% rename('year_month' = 'Date') %>% rename('monthly_sentiment_news' = 'monthly_sentiment')
+ucd_month_truncate_news <- merge(x=ucd_month_truncate, y=ucd_news_month_truncate, by='year_month')
+
+ucsb_news_month_truncate <- ucsb_news_month_truncate %>% rename('year_month' = 'Date') %>% rename('monthly_sentiment_news' = 'monthly_sentiment')
+ucsb_month_truncate_news <- merge(x=ucsb_month_truncate, y=ucsb_news_month_truncate, by='year_month')
+
+
+ucsc_month_truncate_news <- ucsc_month_truncate %>%
+  filter((ucsc_month_truncate$year_month) %in% ucsc_news_month_truncate$Date)
+
+ucsb_month_truncate_news <- ucsb_month_truncate %>%
+  filter((ucsb_month_truncate$year_month) %in% ucsb_news_month_truncate$Date)
+
+ucr_month_truncate_news <- ucr_month_truncate %>%
+  filter((ucr_month_truncate$year_month) %in% ucr_news_month_truncate$Date)
+
+ucd_month_truncate_news <- ucd_month_truncate %>%
+  filter((ucd_month_truncate$year_month) %in% ucd_news_month_truncate$Date)
+```
+
+## Welch's T-test
+General idea in texts: $ H_0: Covid19 \: does \: not \: impact \: UCI \: subreddit \: sentiments.$ vs. $H_A: Covid19 \: impact \: UCI \: subreddit \: sentiments \: significantly.$
+
+$$1.(UCI) \: \: \: H_0: \pi_{before} = \pi_{after} \: \: vs. \: \: H_A: \pi_{before} \neq \pi_{after} $$
+$$2.(UCLA) \: \: \: H_0: \pi_{before} = \pi_{after} \: \: vs. \: \: H_A: \pi_{before} \neq \pi_{after} $$
+$$3.(UCD) \: \: \: H_0: \pi_{before} = \pi_{after} \: \: vs. \: \: H_A: \pi_{before} \neq \pi_{after} $$
+$$4.(UCSD) \: \: \: H_0: \pi_{before} = \pi_{after} \: \: vs. \: \: H_A: \pi_{before} \neq \pi_{after} $$
+$$5.(UCSB) \: \: \: H_0: \pi_{before} = \pi_{after} \: \: vs. \: \: H_A: \pi_{before} \neq \pi_{after} $$
+$$6.(UCR) \: \: \: H_0: \pi_{before} = \pi_{after} \: \: vs. \: \: H_A: \pi_{before} \neq \pi_{after} $$
+$$7.(UCSC) \: \: \: H_0: \pi_{before} = \pi_{after} \: \: vs. \: \: H_A: \pi_{before} \neq \pi_{after} $$
+
+$$\alpha = 0.05$$
+```{r}
+# KEEP IN MIND: No Bonferroni Correction
+# We are not trying to compare with one another (among UC Schools)
+```
+
+```{r}
+# conduct the Welch's t-test for 7 times
+```
+
+
+## Welch's T-test
+General idea in texts: baseline (April 2020) vs. after (May 2020 to April 2023)
+```{r}
+UCI = t.test(uci_academic_2019$monthly_sentiment, uci_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCLA = t.test(ucla_academic_2019$monthly_sentiment, ucla_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCB = t.test(ucb_academic_2019$monthly_sentiment, ucb_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCSD = t.test(ucsd_academic_2019$monthly_sentiment, ucsd_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCSB = t.test(ucsb_academic_2019$monthly_sentiment, ucsb_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCSC = t.test(ucsc_academic_2019$monthly_sentiment, ucsc_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCR = t.test(ucr_academic_2019$monthly_sentiment, ucr_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCD = t.test(ucd_academic_2019$monthly_sentiment, ucd_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+UCM = t.test(ucm_academic_2019$monthly_sentiment, ucm_academic_2020$monthly_sentiment, alternative='two.sided', var.equal = FALSE)
+
+cat('\nUCI equal:', UCI$p.value, '\n')
+cat('UCLA equal:', UCLA$p.value, '\n')
+cat('UCB equal:', UCB$p.value, '\n')
+cat('UCSD equal:', UCSD$p.value, '\n')
+cat('UCSB equal:', UCSB$p.value, '\n')
+cat('UCSC equal:', UCSC$p.value, '\n')
+cat('UCR equal:', UCR$p.value, '\n')
+cat('UCD equal:', UCD$p.value, '\n')
+cat('UCM equal:', UCM$p.value, '\n')
+
+UCI = t.test(uci_academic_2019$monthly_sentiment, uci_academic_2020$monthly_sentiment, alternative='greater', var.equal = FALSE)
+UCSC = t.test(ucsc_academic_2019$monthly_sentiment, ucsc_academic_2020$monthly_sentiment, alternative='greater', var.equal = FALSE)
+UCM = t.test(ucm_academic_2019$monthly_sentiment, ucm_academic_2020$monthly_sentiment, alternative='greater', var.equal = FALSE)
+
+cat('\nUCI greater:', UCI$p.value, '\n')
+cat('UCSC greater:', UCSC$p.value, '\n')
+cat('UCM greater:', UCM$p.value, '\n')
+
+UCI = t.test(uci_academic_2019$monthly_sentiment, uci_academic_2020$monthly_sentiment, alternative='less', var.equal = FALSE)
+UCSC = t.test(ucsc_academic_2019$monthly_sentiment, ucsc_academic_2020$monthly_sentiment, alternative='less', var.equal = FALSE)
+UCM = t.test(ucm_academic_2019$monthly_sentiment, ucm_academic_2020$monthly_sentiment, alternative='less', var.equal = FALSE)
+
+cat('\nUCI less:', UCI$p.value, '\n')
+cat('UCSC less:', UCSC$p.value, '\n')
+cat('UCM less:', UCM$p.value, '\n')
+```
+No evidence for increase or decrease in sentiment after covid: UCLA, UCB, UCSD, UCSB, UCR, UCD
+Evidence of decrease in sentiment after covid: UCI, UCSC, UCM
+
+## IV. Reddits & News
+## Rank Order Correlation Test
+General idea in texts: Is the sentiment of the news correlated with the sentiments of all UC's Reddits?
+
+There is a rank order correlation between monthly news data sentiments and monthly UCI subreddit comment sentiments.
+There is no a rank order correlation between monthly news data sentiments and monthly UCI subreddit comment sentiments.
+$$H_0: \rho = 0$$
+$$H_A: \rho \neq 0$$
+```{r}
+# conduct the time series correlation test for 7 times
+correlation_test_uci <- cor.test(uci_month_truncate_news$monthly_sentiment, uci_month_truncate_news$monthly_sentiment_news, method= 'spearman', exact=FALSE)
+
+correlation_test_ucla <- cor.test(ucla_month_truncate_news$monthly_sentiment, ucla_month_truncate_news$monthly_sentiment_news, method = "spearman", exact=FALSE)
+
+correlation_test_ucsd <- cor.test(ucsd_month_truncate_news$monthly_sentiment, ucsd_month_truncate_news$monthly_sentiment_news, method = "spearman", exact=FALSE)
+
+correlation_test_ucsc <- cor.test(ucsc_month_truncate_news$monthly_sentiment, ucsc_month_truncate_news$monthly_sentiment_news, method = "spearman", exact=FALSE)
+
+correlation_test_ucsb <- cor.test(ucsb_month_truncate_news$monthly_sentiment, ucsb_month_truncate_news$monthly_sentiment_news, method = "spearman", exact=FALSE)
+
+correlation_test_ucr <- cor.test(ucr_month_truncate_news$monthly_sentiment, ucr_month_truncate_news$monthly_sentiment_news, method = "spearman", exact=FALSE)
+
+correlation_test_ucd <- cor.test(ucd_month_truncate_news$monthly_sentiment, ucd_month_truncate_news$monthly_sentiment_news, method = "spearman", exact=FALSE)
+
+cat('UCI Correlation with News Data:', correlation_test_uci$p.value, '\n Correlation Coefficient:', correlation_test_uci$estimate)
+cat('UCLA Correlation with News Data:', correlation_test_ucla$p.value, '\n Correlation Coefficient:', correlation_test_ucla$estimate)
+cat('UCSD Correlation with News Data:', correlation_test_ucsd$p.value, '\n Correlation Coefficient:', correlation_test_ucsd$estimate)
+cat('UCSC Correlation with News Data:', correlation_test_ucsc$p.value, '\n Correlation Coefficient:', correlation_test_ucsc$estimate)
+cat('UCSB Correlation with News Data:', correlation_test_ucsb$p.value, '\n Correlation Coefficient:', correlation_test_ucsb$estimate)
+cat('UCR Correlation with News Data:', correlation_test_ucr$p.value, '\n Correlation Coefficient:', correlation_test_ucr$estimate)
+cat('UCD Correlation with News Data:', correlation_test_ucd$p.value, '\n Correlation Coefficient:', correlation_test_ucd$estimate)
+
+
+```
+
