@@ -1,0 +1,11 @@
+Chen, Zihan, and Marina Sokolova. Sentiment Analysis of the COVID-Related r/Depression Posts, 28 July 2021, https://arxiv.org/ftp/arxiv/papers/2108/2108.06215.pdf. 
+
+Complete Dissertation by Statistics Solution, “Kruskal-Wallis Test”, 23 May 2023, https://www.statisticssolutions.com/kruskal-wallis-test/. 
+
+Montana State University, “Jonckheere-Terpstra Test for Ordered Alternatives.” 23 May 2023,  https://math.montana.edu/jobo/thainp/twosampb.pdf. 
+
+Raheman, Ali, et al. Social Media Sentiment Analysis for Cryptocurrency Market Prediction, 19 Apr. 2022, arxiv.org/ftp/arxiv/papers/2204/2204.10185.pdf. 
+
+Yan T, Liu F (2022) COVID-19 sentiment analysis using college subreddit data. PLoS ONE 17(11): e0275862. https://doi.org/10.1371/journal.pone.0275862.
+
+Zach. Welch’s T-test: When to Use + Example, Statology, 29 May 2019, ​​https://www.statology.org/welchs-t-test/.
