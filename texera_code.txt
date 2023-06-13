@@ -1,0 +1,31 @@
+from typing import Iterator, Union
+
+from typing import Optional
+from overrides import overrides
+from pytexera import InputExhausted, Tuple, TupleLike, UDFOperatorV2, overrides
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+#from vaderSentiment import SentimentIntensityAnalyzer
+
+
+class SentimentProcessor(UDFOperatorV2):
+
+    @overrides
+    def process_tuple(self, tuple_: Union[Tuple, InputExhausted], port: int) -> Iterator[Optional[TupleLike]]:
+        if isinstance(tuple_, Tuple):
+            analyzer = SentimentIntensityAnalyzer()
+            selftext = tuple_['body']
+            if selftext is not None:
+                tuple_['sentiment_score'] = analyzer.polarity_scores(selftext)['compound']
+            else:
+                tuple_['sentiment_score'] = 0
+            yield tuple_
+
+
+class MonthProcessor(UDFOperatorV2):
+
+    @overrides
+    def process_tuple(self, tuple_: Union[Tuple, InputExhausted], port: int) -> Iterator[Optional[TupleLike]]:
+        if isinstance(tuple_, Tuple):
+            split_res = str(tuple_["created_utc"]).split("-")
+            tuple_["month"] = split_res[0] + "-" + split_res[1]
+            yield tuple_
